@@ -16,11 +16,19 @@ app.use(express.json())
 
 
 //Import routes
-
+import authRoutes from './routes/authRoutes'
+import propertyRoutes from './routes/propertyRoutes'
+import carRoutes from './routes/carsRoutes'
+import paymentRoutes from './routes/paymentRoutes';
 
 //use routes
+app.use('/api/auth', authRoutes)
+app.use('/api/properties', propertyRoutes)
+app.use('/api/cars', carRoutes);
+app.use('/api/payments', paymentRoutes);
 
 
+// offline
 app.get('/', (_,  res: Response) => {
     res.send('ATW HQ Application running...')
 })

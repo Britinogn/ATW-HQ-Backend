@@ -1,14 +1,17 @@
-import express from 'express'
+import express from 'express';
 const router = express.Router();
 
-const {register, login,forgetPassword, resetPassword, profile} = require('../controllers/authController');
-const auth = require ('../middleware/authMiddleware');
+import authController from '../controller/authController';
+import { authMiddleware } from '../middleware/authMiddleware';
+import { requireRole } from '../middleware/roleMiddleware';
 
 // Public routes
-router.post ('/register', register);
-router.post ('/login', login);
-router.post ('/forgot-password', forgetPassword);
-router.post ('/reset-password/:token', resetPassword);
-router.get ('/profile', auth, profile);
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/forgot-password', authController.forgetPassword);
+router.post('/reset-password/:token', authController.resetPassword);
 
-module.exports = router;
+// Protected routes
+router.get('/profile', authMiddleware, requireRole(['user', 'admin', 'agent']), authController.profile);
+
+export default router;

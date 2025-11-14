@@ -1,28 +1,24 @@
 import { Router } from 'express';
-import {
-  getAllCars,
-  getCarById,
-  createCar,
-  updateCar,
-  deleteCar,
-} from '../controller/carsController'; // Adjust path to your controllers
-import { protect, authorize } from '../middleware/authMiddleware';  // Adjust path to middleware
+import carController from '../controller/carsController'; 
+import { requireRole } from '../middleware/roleMiddleware';
+import { authMiddleware } from '../middleware/authMiddleware';
+import { uploadCar } from '../middleware/uploadMiddleware'; 
 
 const router = Router();
 
 // GET /api/cars - Retrieve all cars (authenticated users only)
-router.get('/', protect, getAllCars);
+router.get('/',  carController.getAllCars);
 
 // GET /api/cars/:id - Retrieve a single car (authenticated users only)
-router.get('/:id', protect, getCarById);
+router.get('/:id',  carController.getCarById);
 
 // POST /api/cars - Create a new car (admin/agent only)
-router.post('/', protect, authorize('admin', 'agent'), createCar);
+router.post('/', authMiddleware, requireRole(['admin', 'agent']), uploadCar.array('images',10) ,carController.createCar);
 
 // PATCH /api/cars/:id - Update a car (admin/agent or owner only)
-router.patch('/:id', protect, authorize('admin', 'agent'), updateCar);
+router.patch('/:id', authMiddleware, requireRole(['admin', 'agent']),  uploadCar.array('images',10), carController.updateCar);
 
 // DELETE /api/cars/:id - Delete a car (admin/agent or owner only)
-router.delete('/:id', protect, authorize('admin', 'agent'), deleteCar);
+router.delete('/:id', authMiddleware, requireRole(['admin', 'agent']), carController.deleteCar);
 
 export default router;

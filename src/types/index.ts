@@ -1,5 +1,7 @@
 import { ObjectId } from 'mongoose'
 import { UserRole , PropertyStatus , PropertyType , CarCondition } from './enums';
+import { Request } from "express";
+
 // Redis type
 export interface CacheOptions{
     isOpen: boolean;
@@ -15,9 +17,9 @@ export interface IUser {
     role: UserRole;
 
     isVerified?: boolean;         // email verification
-    verificationToken?: string;   // for email verification
-    resetPasswordToken?: string;  // for password reset
-    resetPasswordExpires?: Date;
+    verificationToken?: string | undefined;   // for email verification
+    resetPasswordToken?: string | undefined;  // for password reset
+    resetPasswordExpires?: Date | undefined;
 
     createdAt?: Date;    // timestamp when user was created
     updatedAt?: Date;    // timestamp when user was last updated
@@ -79,6 +81,63 @@ export interface MulterFile {
     filename: string;
 }
 
+// ------------------------------
+// Paystack Payment Types
+// ------------------------------
+
+export interface IPaymentInitialize {
+    email: string;
+    amount: number; // in Naira, will convert to kobo
+    callbackUrl?: string;
+}
+
+export interface IPaymentInitializeResponse {
+    status: boolean;
+    message?: string;
+    data: {
+        authorizationUrl: string;
+        accessCode: string;
+        reference: string;
+    };
+}
+
+export interface IPaymentVerifyResponse {
+    status: boolean;
+    message: string;
+    data: {
+        id: number;
+        domain: string;
+        status: 'success' | 'failed' | 'abandoned';
+        reference: string;
+        amount: number;   // in kobo
+        message: string | null;
+        gateway_response: string | null;
+        paid_at?: Date | null;
+        channel: string;
+        currency: string;
+        customer: {
+            email: string;
+            firstName?: string;
+            lastName?: string;
+            
+        };
+    };
+}
+
+export interface PaystackError {
+    status: false;
+    message: string;
+}
+
+// Generic request body type
+// export interface IRequestBody<T> extends Request {
+//     body: T;
+// }
+
+// // Generic request query type (optional)
+// export interface IRequestQuery<T> extends Request {
+//     query: T;
+// }
 
 
 

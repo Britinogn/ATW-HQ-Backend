@@ -1,57 +1,61 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import  User  from '../models/Users';  // Destructure the model explicitly
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import type { IUser } from '../types'; // Import the IUser type for typing
+import User from '../models/Users'; // Default import for the User module
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';  // Use env var in production
-const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';  // Token expiration
+// Interface to extend Request for user attachment
+interface AuthRequest extends Request {
+    user?: IUser;
+}
 
-// Middleware to protect routes: Verify JWT and attach user to req
-export const protect = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    let token: string | undefined;
+// JWT Secret (load from environment)
+const JWT_SECRET = process.env.JWT_SECRET!;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
+// Authentication Middleware
+export const authMiddleware = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+
+        if (!token) {
+            return res.status(401).json({
+                status: false,
+                message: 'Access denied. No token provided.'
+            });
+        }
+
+        // Verify token with expiration check (default behavior)
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+        const user = await User.User.findById(decoded.userId).select('-password'); // Access model via User.User
+
+        if (!user) {
+            return res.status(401).json({
+                status: false,
+                message: 'Invalid token. User not found.'
+            });
+        }
+
+        req.user = user;
+        next();
+    } catch (error: any) {
+        // Specific handling for expired tokens
+        if (error instanceof TokenExpiredError) {
+            return res.status(401).json({
+                status: false,
+                message: 'Token expired. Please log in again.'
+            });
+        }
+
+        // Generic invalid token handling
+        res.status(400).json({
+            status: false,
+            message: 'Invalid token.'
+        });
     }
-
-    if (!token) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Access denied. No token provided.',
-      });
-    }
-
-    // Verify and decode token
-    const decoded: { id: string } = jwt.verify(token, JWT_SECRET) as { id: string };
-    
-    // Fetch user from database (excluding sensitive fields)
-    const user = await User.User.findById(decoded.id).select('-password -verificationToken -resetPasswordToken -resetPasswordExpires');
-    if (!user) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Access denied. User not found.',
-      });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      status: 'error',
-      message: 'Access denied. Invalid token.',
-    });
-  }
 };
 
-// Middleware for role-based authorization
-export const authorize = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({
-        status: 'error',
-        message: `Access denied. Requires one of the following roles: ${roles.join(', ')}`,
-      });
-    }
-    next();
-  };
-};
+// Note: For token signing (e.g., in login routes), use the following pattern:
+// jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '2h' });
