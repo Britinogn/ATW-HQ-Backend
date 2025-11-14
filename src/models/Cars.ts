@@ -67,6 +67,15 @@ const CarSchema: Schema<ICar> = new Schema<ICar>({
         required: [true, 'Posted by user is required'],
     },
 
+    location: {
+        type: {
+            city: { type: String, required: [true, 'City is required'], trim: true, default: 'Agbor' },
+            state: { type: String, required: [true, 'State is required'], trim: true, default: 'Delta' },
+            showroom: { type: String, trim: true }
+        },
+        required: true
+    }
+
 }, { timestamps: true }
 );
 
@@ -75,6 +84,7 @@ CarSchema.index({ status: 1 });  // Filter by availability
 CarSchema.index({ make: 1, model: 1 });  // Search by vehicle details
 CarSchema.index({ year: 1, price: 1 });  // Sort by year and price
 CarSchema.index({ postedBy: 1 });  // Queries by dealer
+CarSchema.index({ 'location.city': 1 });
 
 // Compile the model
 const Car: Model<ICar> = mongoose.model<ICar>('Car', CarSchema);

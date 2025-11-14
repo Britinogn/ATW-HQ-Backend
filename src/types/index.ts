@@ -30,8 +30,13 @@ export interface IProperty {
     title: string;
     propertyType: PropertyType;
     price: number; 
-    location: string;
-    address?: string; 
+    location: {
+        city: string;     
+        state: string;    
+        area?: string;    
+        address?: string;  
+    };
+    //address?: string; 
     description: string;
     images: string[]; 
     size: number;  
@@ -56,6 +61,12 @@ export interface ICar {
     price: number;
     description: string;
     images: string[];  
+    location: {
+        city: string;
+        state: string;
+        address?:string
+        showroom?: string;  // Optional: specific showroom/lot name
+    };
     status: PropertyStatus;  
     postedBy: ObjectId | string; 
     createdAt?: Date;

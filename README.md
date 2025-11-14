@@ -13,12 +13,6 @@ Express.js + TypeScript backend server with MongoDB integration.
 npm install
 ```
 
-Create `.env` file:
-```env
-PORT=5000
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/database
-NODE_ENV=development
-```
 
 ### Scripts
 - `npm run build` - Compile TypeScript to JavaScript

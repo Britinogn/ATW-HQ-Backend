@@ -25,15 +25,24 @@ const PropertySchema: Schema<IProperty> = new Schema<IProperty>({
         min: [0, 'Price cannot be negative'],
     },
     location: {
-        type: String,
-        required: [true, 'Location is required'],
-        trim: true,
+        type: {
+            city: { type: String, required: true, default: 'Agbor' },
+            state: { type: String, required: true, default: 'Delta' },
+            area: { type: String, required: false },
+            address: { type: String, required: false }
+        },
+        required: true
     },
-    address: {
-        type: String,
-        trim: true,
-        maxlength: [200, 'Address cannot exceed 200 characters'],
-    },
+    // location: {
+    //     type: String,
+    //     required: [true, 'Location is required'],
+    //     trim: true,
+    // },
+    // address: {
+    //     type: String,
+    //     trim: true,
+    //     maxlength: [200, 'Address cannot exceed 200 characters'],
+    // },
     description: {
         type: String,
         trim: true,
@@ -96,6 +105,7 @@ PropertySchema.index({ status: 1 });  // Quick filtering by availability
 PropertySchema.index({ location: 'text' });  // Text search on location
 PropertySchema.index({ postedBy: 1 });  // Efficient queries by agent
 PropertySchema.index({ price: 1 });  // Sorting/filtering by price
+PropertySchema.index({ 'location.city': 1 });
 
 // Compile the model
 const Property: Model<IProperty> = mongoose.model<IProperty>('Property', PropertySchema);
