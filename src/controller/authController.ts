@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { IUser } from '../types';
 import { UserRole } from '../types/enums';
 import User from '../models/Users';
@@ -21,24 +22,65 @@ export interface IErrorResponse {
 // Environment variables
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '2h';
+const EMAIL_USER = process.env.EMAIL_USER!;
+const EMAIL_PASS = process.env.EMAIL_PASS!;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// Configure Nodemailer transporter for Gmail SMTP
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS
+    }
+});
+
+
+// Helper function to send verification/reset email (placeholder; integrate with your email service, e.g., nodemailer)
+const sendEmail = async (to: string, subject: string, token: string, type: 'verification' | 'reset'): Promise<void> => {
+    try {
+        const verificationUrl = `${FRONTEND_URL}/auth/verify/${token}`;
+        const resetUrl = `${FRONTEND_URL}/auth/reset/${token}`;
+
+        const htmlTemplate = type === 'verification'
+            ? `
+                <h2>Email Verification</h2>
+                <p>Hello,</p>
+                <p>Please click the link below to verify your email address:</p>
+                <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a>
+                <p>If you did not request this, please ignore this email.</p>
+                <p>Best regards,<br>Your App Team</p>
+            `
+            : `
+                <h2>Password Reset</h2>
+                <p>Hello,</p>
+                <p>You requested a password reset. Click the link below to proceed:</p>
+                <a href="${resetUrl}" style="background-color: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+                <p>This link expires in 1 hour. If you did not request this, please ignore this email.</p>
+                <p>Best regards,<br>Your App Team</p>
+            `;
+
+        await transporter.sendMail({
+            from: `"Your App" <${EMAIL_USER}>`,
+            to,
+            subject,
+            html: htmlTemplate
+        });
+
+        console.log(`Email sent successfully to ${to} for ${type}`);
+    } catch (error: any) {
+        console.error(`Failed to send ${type} email to ${to}:`, error.message);
+        // Do not throw; allow the API response to proceed
+    }
+
+    
+};
 
 // Helper function to generate JWT token
 const generateToken = (userId: string): string => {
     const options: SignOptions = { expiresIn: JWT_EXPIRES_IN as any };
     return jwt.sign({ userId }, JWT_SECRET, options);
 };
-
-// Helper function to send verification/reset email (placeholder; integrate with your email service, e.g., nodemailer)
-const sendEmail = async (to: string, subject: string, token: string, type: 'verification' | 'reset'): Promise<void> => {
-    // Implementation example:
-    // await transporter.sendMail({
-    //     to,
-    //     subject,
-    //     html: type === 'verification' ? `Verify: ${token}` : `Reset: ${token}`
-    // });
-    console.log(`Email sent to ${to} for ${type} with token: ${token}`); // Placeholder log
-};
-
 
 // Register User
 export const register = async (

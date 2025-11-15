@@ -50,7 +50,7 @@ const UserSchema: Schema<IUser> = new Schema<IUser>({
 } , { timestamps: true });
 
 // Indexes for performance
-UserSchema.index({ email: 1 });
+//UserSchema.index({ email: 1 });
 UserSchema.index({ email: 1, role: 1 });  // Compound index for role-based queries 
 
 // Compile the model (optional: export for use elsewhere)

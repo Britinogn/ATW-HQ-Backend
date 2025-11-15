@@ -1,6 +1,7 @@
-#version: '3.8'
+# version: '3.8'
 
 services:
+
   # 🧩 MongoDB Database
   mongodb:
     image: mongo:7
@@ -15,6 +16,15 @@ services:
     networks:
       - app-network
 
+  # 🔹 Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
   # 🚀 Express + TypeScript App
   express-app:
     build:
@@ -26,16 +36,21 @@ services:
     environment:
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/mydb?authSource=admin
       PORT: 5000
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      FRONTEND_URL: ${FRONTEND_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
     depends_on:
       - mongodb
+      - redis
     networks:
       - app-network
     volumes:
-      # Mount project files for live editing (hot reload)
       - .:/app
-      # Keep node_modules isolated from host
       - /app/node_modules
-    command: npm run dev # 👈 runs ts-node or nodemon in dev mode
+    command: npm run dev
 
 volumes:
   mongodb_data:

@@ -19,6 +19,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
+    "@types/nodemailer": "^7.0.3",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
@@ -33,6 +34,7 @@
     "mongoose": "^8.19.3",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
+    "nodemailer": "^7.0.10",
     "paystack-sdk": "^3.2.0",
     "redis": "^5.9.0"
   }
