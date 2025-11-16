@@ -37,31 +37,83 @@ const transporter = nodemailer.createTransport({
 
 
 // Helper function to send verification/reset email (placeholder; integrate with your email service, e.g., nodemailer)
-const sendEmail = async (to: string, subject: string, token: string, type: 'verification' | 'reset'): Promise<void> => {
+const sendEmail = async (to: string, subject: string, token: string, type: 'verification' | 'reset', name?: string): Promise<void> => {
     try {
         const verificationUrl = `${FRONTEND_URL}/auth/verify/${token}`;
         const resetUrl = `${FRONTEND_URL}/auth/reset/${token}`;
 
-        const htmlTemplate = type === 'verification'
-            ? `
-                <h2>Email Verification</h2>
-                <p>Hello,</p>
-                <p>Please click the link below to verify your email address:</p>
-                <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a>
-                <p>If you did not request this, please ignore this email.</p>
-                <p>Best regards,<br>Your App Team</p>
-            `
-            : `
-                <h2>Password Reset</h2>
-                <p>Hello,</p>
-                <p>You requested a password reset. Click the link below to proceed:</p>
-                <a href="${resetUrl}" style="background-color: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
-                <p>This link expires in 1 hour. If you did not request this, please ignore this email.</p>
-                <p>Best regards,<br>Your App Team</p>
-            `;
+        // Fallback to email local part if name not provided
+        const displayName = name || to.split("@")[0];
+
+        const htmlTemplate = `
+            <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 0; margin: 0;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding: 40px 0;">
+                <tr>
+                <td align="center">
+                    <table width="600" style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: #111827; padding: 20px; text-align: center;">
+                        <h2 style="color: white; margin: 0; font-size: 24px; letter-spacing: 1px;">
+                            ATW HQ
+                        </h2>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 30px 40px; color: #333333; font-size: 16px; line-height: 1.6;">
+                        ${
+                            type === "verification"
+                            ? `
+                                <h3 style="margin-top: 0; color: #111827;">Email Verification</h3>
+                                <p>Hello ${displayName},</p>
+                                <p>Welcome to ATW HQ. Kindly verify your email by clicking the button below.</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                <a href="${verificationUrl}" 
+                                    style="background: #10B981; color: white; padding: 14px 30px; text-decoration: none; 
+                                    font-size: 16px; border-radius: 6px; display: inline-block;">
+                                    Verify Email
+                                </a>
+                                </div>
+                                <p>If you did not create an account, kindly ignore this message.</p>
+                            `
+                            : `
+                                <h3 style="margin-top: 0; color: #111827;">Password Reset</h3>
+                                <p>Hello ${displayName},</p>
+                                <p>You have requested to reset your password. Click the button below to continue.</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                <a href="${resetUrl}" 
+                                    style="background: #EF4444; color: white; padding: 14px 30px; text-decoration: none; 
+                                    font-size: 16px; border-radius: 6px; display: inline-block;">
+                                    Reset Password
+                                </a>
+                                </div>
+                                <p>This link expires in 1 hour. If you didn't request this, kindly ignore this email.</p>
+                            `
+                        }
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background: #F3F4F6; padding: 20px; text-align: center; font-size: 14px; color: #6B7280;">
+                        <p style="margin: 0;">© ${new Date().getFullYear()} ATW HQ. All rights reserved.</p>
+                        </td>
+                    </tr>
+
+                    </table>
+                </td>
+                </tr>
+            </table>
+            </div>
+        
+        `;
+
 
         await transporter.sendMail({
-            from: `"Your App" <${EMAIL_USER}>`,
+            from: `"ATW HQ" <${EMAIL_USER}>`,
             to,
             subject,
             html: htmlTemplate
@@ -161,10 +213,10 @@ export const login = async (
         }
 
         // Check if verified
-        if (!user.isVerified) {
-            res.status(403).json({ status: false, message: 'Please verify your email first' });
-            return;
-        }
+        // if (!user.isVerified) {
+        //     res.status(403).json({ status: false, message: 'Please verify your email first' });
+        //     return;
+        // }
 
         // Validate password
         const isMatch = await bcrypt.compare(password, user.password);
@@ -189,6 +241,47 @@ export const login = async (
         res.status(500).json({ status: false, message: error.message || 'Login failed' });
     }
 };
+
+// verifyEmail
+
+export const verifyEmail = async (
+    req: Request<{ token: string }>,
+    res: Response<IAuthResponse | IErrorResponse>
+): Promise<void> => {
+    try {
+        const { token } = req.params;
+
+        if (!token) {
+            res.status(400).json({ status: false, message: "Verification token is required" });
+            return;
+        }
+
+        // Find user with this token
+        const user = await User.User.findOne({ verificationToken: token });
+
+        if (!user) {
+            res.status(400).json({ status: false, message: "Invalid or expired verification token" });
+            return;
+        }
+
+        // Mark user as verified
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        await user.save();
+
+        res.json({
+            status: true,
+            message: "Email verified successfully. You can now log in."
+        });
+    } catch (error: any) {
+        console.error("Verification error:", error);
+        res.status(500).json({
+            status: false,
+            message: error.message || "Failed to verify email"
+        });
+    }
+};
+
 
 // Forgot Password
 export const forgetPassword = async (
@@ -310,6 +403,7 @@ export const profile = async (
 export default {
     register,
     login,
+    verifyEmail,
     forgetPassword,
     resetPassword,
     profile

@@ -51,6 +51,7 @@ services:
       - .:/app
       - /app/node_modules
     command: npm run dev
+    #command: node dist/server.js
 
 volumes:
   mongodb_data:

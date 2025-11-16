@@ -27,7 +27,7 @@ COPY . .
 # Compile TypeScript to JavaScript
 # This creates a /dist folder with compiled .js files
 # The build script should be defined in package.json
-RUN npm run build
+#RUN npm run build
 
 # Tell Docker that the container will listen on port 5000
 # This doesn't actually publish the port, just documents it
@@ -36,4 +36,5 @@ EXPOSE 5000
 # The command to run when the container starts
 # This runs the compiled JavaScript from the dist folder
 #CMD ["npm", "start"]
-CMD ["node", "dist/server.js"]
+#CMD ["node", "dist/server.js"]
+CMD ["npm", "run", "dev"]
