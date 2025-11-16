@@ -31,7 +31,9 @@ export interface IProperty {
     _id: ObjectId | string; 
     title: string;
     propertyType: PropertyType;
-    price: number; 
+    price: number;
+    offPrice: number;
+    callOnPrice: boolean;
     location: {
         city: string;     
         state: string;    
@@ -61,6 +63,8 @@ export interface ICar {
     mileage: number;  
     condition: CarCondition;
     price: number;
+    offPrice: number;
+    callOnPrice: boolean;
     description: string;
     images: string[];  
     location: {

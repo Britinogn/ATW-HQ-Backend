@@ -39,6 +39,17 @@ const CarSchema: Schema<ICar> = new Schema<ICar>({
         required: [true, 'Price is required'],
         min: [0, 'Price cannot be negative'],
     },
+
+    offPrice: {
+        type: Number,
+        required:false,
+    },
+
+    callOnPrice: {
+        type: Boolean,
+        default: false,
+    },
+
     description: {
         type: String,
         trim: true,

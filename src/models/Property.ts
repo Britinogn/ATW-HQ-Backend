@@ -24,6 +24,17 @@ const PropertySchema: Schema<IProperty> = new Schema<IProperty>({
         required: [true, 'Price is required'],
         min: [0, 'Price cannot be negative'],
     },
+    
+    offPrice: {
+        type: Number,
+        required:false,
+    },
+
+    callOnPrice: {
+        type: Boolean,
+        default: false,
+    },
+
     location: {
         type: {
             city: { type: String, required: true, default: 'Agbor' },

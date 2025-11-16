@@ -213,10 +213,10 @@ export const login = async (
         }
 
         // Check if verified
-        // if (!user.isVerified) {
-        //     res.status(403).json({ status: false, message: 'Please verify your email first' });
-        //     return;
-        // }
+        if (!user.isVerified) {
+            res.status(403).json({ status: false, message: 'Please verify your email first' });
+            return;
+        }
 
         // Validate password
         const isMatch = await bcrypt.compare(password, user.password);
@@ -400,11 +400,69 @@ export const profile = async (
     }
 };
 
+
+
+export const getAllUsers = async (
+    req: Request, 
+    res: Response
+): Promise<void> => {
+    try {
+        const users = await User.User.find({}, "-password -resetPasswordToken -resetPasswordExpires");
+
+        res.json({
+            status: true,
+            message: "All users fetched successfully",
+            data: users
+        });
+
+    } catch (error: any) {
+        console.error("Fetch all users error:", error);
+        res.status(500).json({
+            status: false,
+            message: error.message || "Failed to fetch users"
+        });
+    }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            res.status(400).json({ status: false, message: 'User ID is required' });
+            return;
+        }
+
+        const user = await User.User.findByIdAndDelete(id);
+
+        if (!user) {
+            res.status(404).json({ status: false, message: 'User not found' });
+            return;
+        }
+
+        res.json({
+            status: true,
+            message: 'User deleted successfully'
+        });
+
+    } catch (error: any) {
+        console.error('Delete user error:', error);
+        res.status(500).json({
+            status: false,
+            message: error.message || 'Failed to delete user'
+        });
+    }
+};
+
+
+
 export default {
     register,
     login,
     verifyEmail,
     forgetPassword,
     resetPassword,
-    profile
+    profile,
+    getAllUsers,
+    deleteUser
 };
