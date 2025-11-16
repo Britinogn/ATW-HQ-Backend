@@ -34,6 +34,9 @@ const UserSchema: Schema<IUser> = new Schema<IUser>({
         type: Boolean,
         default: false,
     },
+    
+    isApproved: { type: Boolean, default: false } ,
+
     verificationToken: {
         type: String,
         select: false,  // Exclude from queries

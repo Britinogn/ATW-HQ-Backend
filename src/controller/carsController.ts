@@ -1,57 +1,102 @@
-import {Car} from '../models/Cars'
+import { Request, Response } from 'express';
+import {Car} from '../models/Cars';
 import cloudinary from '../config/cloudinary';
-import { Request, Response, NextFunction } from 'express';
 import { ICar } from '../types';
-import { PropertyStatus ,CarCondition } from '../types/enums';
+import { CarCondition, PropertyStatus } from '../types/enums';
 
-export const getAllCars = async (req: Request, res: Response) => {
+// Response interfaces for type safety
+export interface ICarResponse {
+    status: boolean;
+    message: string;
+    data?: { car?: Partial<ICar>; cars?: Partial<ICar>[] };
+}
+
+export interface IErrorResponse {
+    status: boolean;
+    message: string;
+}
+
+// Get All Cars
+export const getAllCars = async (
+    req: Request,
+    res: Response<ICarResponse | IErrorResponse>
+): Promise<void> => {
     try {
-    
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred while retrieving projects';
-        res.status(500).json({ error: errorMessage });
+        // Implementation here
+    } catch (error: any) {
+        console.error('Get all cars error:', error);
+        res.status(500).json({ 
+            status: false, 
+            message: error.message || 'Failed to fetch cars' 
+        });
     }
 };
 
-export const getCarById = async (req: Request, res: Response) => {
+// Get Car By ID
+export const getCarById = async (
+    req: Request<{ id: string }>,
+    res: Response<ICarResponse | IErrorResponse>
+): Promise<void> => {
     try {
-    
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred while retrieving projects';
-        res.status(500).json({ error: errorMessage });
+        // Implementation here
+    } catch (error: any) {
+        console.error('Get car by ID error:', error);
+        res.status(500).json({ 
+            status: false, 
+            message: error.message || 'Failed to fetch car' 
+        });
     }
 };
 
-export const createCar = async (req: Request, res: Response) => {
+// Create Car
+export const createCar = async (
+    req: Request<{}, ICarResponse | IErrorResponse, Partial<ICar>>,
+    res: Response<ICarResponse | IErrorResponse>
+): Promise<void> => {
     try {
-    
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred while retrieving projects';
-        res.status(500).json({ error: errorMessage });
+        // Implementation here
+    } catch (error: any) {
+        console.error('Create car error:', error);
+        res.status(500).json({ 
+            status: false, 
+            message: error.message || 'Failed to create car' 
+        });
     }
 };
 
-export const updateCar = async (req: Request, res: Response) => {
+// Update Car
+export const updateCar = async (
+    req: Request<{ id: string }, ICarResponse | IErrorResponse, Partial<ICar>>,
+    res: Response<ICarResponse | IErrorResponse>
+): Promise<void> => {
     try {
-    
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred while retrieving projects';
-        res.status(500).json({ error: errorMessage });
+        // Implementation here
+    } catch (error: any) {
+        console.error('Update car error:', error);
+        res.status(500).json({ 
+            status: false, 
+            message: error.message || 'Failed to update car' 
+        });
     }
 };
 
-
-export const deleteCar = async (req: Request, res: Response) => {
+// Delete Car
+export const deleteCar = async (
+    req: Request<{ id: string }>,
+    res: Response<ICarResponse | IErrorResponse>
+): Promise<void> => {
     try {
-    
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred while retrieving projects';
-        res.status(500).json({ error: errorMessage });
+        // Implementation here
+    } catch (error: any) {
+        console.error('Delete car error:', error);
+        res.status(500).json({ 
+            status: false, 
+            message: error.message || 'Failed to delete car' 
+        });
     }
 };
 
-
-export default { 
+export default {
     getAllCars,
     getCarById,
     createCar,

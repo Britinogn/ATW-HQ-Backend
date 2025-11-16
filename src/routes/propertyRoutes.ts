@@ -16,7 +16,7 @@ router.get('/:id',  propertyController.getPropertyById);
 router.post('/', authMiddleware, requireRole(['admin', 'agent']), uploadProperty.array('images', 10), propertyController.createProperty);
 
 // PATCH /api/properties/:id - Update a property (admin/agent or owner only)
-router.patch('/:id', authMiddleware, requireRole(['admin', 'agent']), propertyController.updateProperty);
+router.patch('/:id', authMiddleware, requireRole(['admin', 'agent']), uploadProperty.array('images', 10),  propertyController.updateProperty);
 
 // DELETE /api/properties/:id - Delete a property (admin/agent or owner only)
 router.delete('/:id', authMiddleware, requireRole(['admin', 'agent']), propertyController.deleteProperty);

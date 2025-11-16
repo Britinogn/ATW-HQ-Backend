@@ -121,4 +121,4 @@ PropertySchema.index({ 'location.city': 1 });
 // Compile the model
 const Property: Model<IProperty> = mongoose.model<IProperty>('Property', PropertySchema);
 
-export default { PropertySchema, Property };
+export  { PropertySchema, Property };

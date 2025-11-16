@@ -17,6 +17,7 @@ export interface IUser {
     role: UserRole;
 
     isVerified?: boolean;         // email verification
+    isApproved: boolean;
     verificationToken?: string | undefined;   // for email verification
     resetPasswordToken?: string | undefined;  // for password reset
     resetPasswordExpires?: Date | undefined;
