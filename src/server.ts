@@ -21,11 +21,12 @@ import authRoutes from './routes/authRoutes'
 import propertyRoutes from './routes/propertyRoutes'
 import carRoutes from './routes/carsRoutes'
 import paymentRoutes from './routes/paymentRoutes';
-
+import agentRoutes from './routes/agentRoutes'
 //use routes
 app.use('/api/auth', authRoutes)
 app.use('/api/properties', propertyRoutes)
 app.use('/api/cars', carRoutes);
+app.use('/api/agent', agentRoutes);
 app.use('/api/payments', paymentRoutes);
 
 

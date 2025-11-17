@@ -12,6 +12,7 @@ export interface IAuthResponse {
     status: boolean;
     message: string;
     data?: { token?: string; user?: Partial<IUser> };
+    requiresAgentApplication?: boolean
 }
 
 export interface IErrorResponse {
@@ -24,7 +25,7 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '2h';
 const EMAIL_USER = process.env.EMAIL_USER!;
 const EMAIL_PASS = process.env.EMAIL_PASS!;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173' || '';
 
 // Configure Nodemailer transporter for Gmail SMTP
 const transporter = nodemailer.createTransport({
@@ -37,96 +38,151 @@ const transporter = nodemailer.createTransport({
 
 
 // Helper function to send verification/reset email (placeholder; integrate with your email service, e.g., nodemailer)
-const sendEmail = async (to: string, subject: string, token: string, type: 'verification' | 'reset', name?: string): Promise<void> => {
-    try {
-        const verificationUrl = `${FRONTEND_URL}/auth/verify/${token}`;
-        const resetUrl = `${FRONTEND_URL}/auth/reset/${token}`;
+export const sendEmail = async (
+  to: string,
+  subject: string,
+  token: string,
+  type: "verification" | "reset" | "admin-alert" | "approval" | "rejection",
+  name?: string
+): Promise<void> => {
+  try {
+    const verificationUrl = `${FRONTEND_URL}/auth/verify/${token}`;
+    const resetUrl = `${FRONTEND_URL}/auth/reset/${token}`;
+    const approveUrl = `${FRONTEND_URL}/properties`;
+    const rejectUrl = `${FRONTEND_URL}/agent/rejected`;
 
-        // Fallback to email local part if name not provided
-        const displayName = name || to.split("@")[0];
+    const displayName = name || to.split("@")[0];
 
-        const htmlTemplate = `
-            <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 0; margin: 0;">
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding: 40px 0;">
-                <tr>
-                <td align="center">
-                    <table width="600" style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                    
-                    <!-- Header -->
-                    <tr>
-                        <td style="background: #111827; padding: 20px; text-align: center;">
-                        <h2 style="color: white; margin: 0; font-size: 24px; letter-spacing: 1px;">
-                            ATW HQ
-                        </h2>
-                        </td>
-                    </tr>
+    let mainContent = "";
 
-                    <!-- Body -->
-                    <tr>
-                        <td style="padding: 30px 40px; color: #333333; font-size: 16px; line-height: 1.6;">
-                        ${
-                            type === "verification"
-                            ? `
-                                <h3 style="margin-top: 0; color: #111827;">Email Verification</h3>
-                                <p>Hello ${displayName},</p>
-                                <p>Welcome to ATW HQ. Kindly verify your email by clicking the button below.</p>
-                                <div style="text-align: center; margin: 30px 0;">
-                                <a href="${verificationUrl}" 
-                                    style="background: #10B981; color: white; padding: 14px 30px; text-decoration: none; 
-                                    font-size: 16px; border-radius: 6px; display: inline-block;">
-                                    Verify Email
-                                </a>
-                                </div>
-                                <p>If you did not create an account, kindly ignore this message.</p>
-                            `
-                            : `
-                                <h3 style="margin-top: 0; color: #111827;">Password Reset</h3>
-                                <p>Hello ${displayName},</p>
-                                <p>You have requested to reset your password. Click the button below to continue.</p>
-                                <div style="text-align: center; margin: 30px 0;">
-                                <a href="${resetUrl}" 
-                                    style="background: #EF4444; color: white; padding: 14px 30px; text-decoration: none; 
-                                    font-size: 16px; border-radius: 6px; display: inline-block;">
-                                    Reset Password
-                                </a>
-                                </div>
-                                <p>This link expires in 1 hour. If you didn't request this, kindly ignore this email.</p>
-                            `
-                        }
-                        </td>
-                    </tr>
-
-                    <!-- Footer -->
-                    <tr>
-                        <td style="background: #F3F4F6; padding: 20px; text-align: center; font-size: 14px; color: #6B7280;">
-                        <p style="margin: 0;">© ${new Date().getFullYear()} ATW HQ. All rights reserved.</p>
-                        </td>
-                    </tr>
-
-                    </table>
-                </td>
-                </tr>
-            </table>
-            </div>
-        
+    // -------- EMAIL CONTENT HANDLING ---------
+    switch (type) {
+      case "verification":
+        mainContent = `
+          <h3>Email Verification</h3>
+          <p>Hello ${displayName},</p>
+          <p>Welcome to ATW HQ. Please verify your email below.</p>
+          <div style="text-align:center; margin:25px 0;">
+            <a href="${verificationUrl}" style="
+              background:#10B981;
+              color:white;
+              padding:12px 28px;
+              text-decoration:none;
+              border-radius:6px;
+            ">Verify Email</a>
+          </div>
         `;
+        break;
 
+      case "reset":
+        mainContent = `
+          <h3>Password Reset</h3>
+          <p>Hello ${displayName},</p>
+          <p>Click below to reset your password.</p>
+          <div style="text-align:center; margin:25px 0;">
+            <a href="${resetUrl}" style="
+              background:#EF4444;
+              color:white;
+              padding:12px 28px;
+              text-decoration:none;
+              border-radius:6px;
+            ">Reset Password</a>
+          </div>
+        `;
+        break;
 
-        await transporter.sendMail({
-            from: `"ATW HQ" <${EMAIL_USER}>`,
-            to,
-            subject,
-            html: htmlTemplate
-        });
+      case "admin-alert":
+        mainContent = `
+          <h3>New Agent Registration</h3>
+          <p>Hello Admin,</p>
+          <p>A new agent <strong>${displayName}</strong> has registered and is pending approval.</p>
+          <p>Log in to your admin dashboard to review their account.</p>
+        `;
+        break;
 
-        console.log(`Email sent successfully to ${to} for ${type}`);
-    } catch (error: any) {
-        console.error(`Failed to send ${type} email to ${to}:`, error.message);
-        // Do not throw; allow the API response to proceed
+      case "approval":
+        mainContent = `
+          <h3>Account Approved</h3>
+          <p>Hello ${displayName},</p>
+          <p>Your ATW HQ agent account has been approved. You can now log in and start posting properties.</p>
+          <div style="text-align:center; margin:25px 0;">
+            <a href="${approveUrl}" style="
+              background:#3B82F6;
+              color:white;
+              padding:12px 28px;
+              text-decoration:none;
+              border-radius:6px;
+            ">Continue</a>
+          </div>
+        `;
+        break;
+
+      case "rejection":
+        mainContent = `
+          <h3>Application Rejected</h3>
+          <p>Hello ${displayName},</p>
+          <p>We are sorry, your agent application was not approved.</p>
+          <p><strong>Reason:</strong> ${token || 'Insufficient details provided'}</p>
+          <p>If you believe this was a mistake, you can contact support.</p>
+          <div style="text-align:center; margin:25px 0;">
+            <a href="${rejectUrl}" style="
+              background:#6B7280;
+              color:white;
+              padding:12px 28px;
+              text-decoration:none;
+              border-radius:6px;
+            ">View Details</a>
+          </div>
+        `;
+        break;
     }
 
-    
+    // FINAL EMAIL TEMPLATE
+    const htmlTemplate = `
+      <div style="font-family:Arial; background:#f4f4f4; padding:30px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center">
+              <table width="600" style="background:white; border-radius:10px;">
+                
+                <tr>
+                  <td style="background:#111827; padding:20px; text-align:center;">
+                    <h2 style="color:white;">ATW HQ</h2>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:30px 40px; color:#333;">
+                    ${mainContent}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="background:#F3F4F6; padding:15px; text-align:center; color:#6B7280;">
+                    © ${new Date().getFullYear()} ATW HQ. All rights reserved.
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"ATW HQ" <${EMAIL_USER}>`,
+      to,
+      subject,
+      html: htmlTemplate,
+    });
+
+    console.log(`Email sent to ${to} for ${type}`);
+  } catch (error: any) {
+    console.error("Email error:", error.message);
+  }
 };
+
 
 // Helper function to generate JWT token
 const generateToken = (userId: string): string => {
@@ -140,10 +196,10 @@ export const register = async (
     res: Response<IAuthResponse | IErrorResponse>
 ): Promise<void> => {
     try {
-        const { name, email, password, role = 'user' as UserRole } = req.body;
+        const { name, email, password, role = UserRole.USER as UserRole } = req.body;
 
-        // Validation
-        if (!name || !email || !password) {
+        // Enhanced validation to prevent empty or invalid name
+        if (!name || name.trim().length === 0 || !email || !password) {
             res.status(400).json({ status: false, message: 'Name, email, and password are required' });
             return;
         }
@@ -162,9 +218,9 @@ export const register = async (
         // Generate verification token
         const verificationToken = crypto.randomBytes(20).toString('hex');
 
-        // Create user
+        // Create user with role-specific defaults (no immediate agent flags)
         const newUser: Partial<IUser> = {
-            name,
+            name: name.trim(),  // Ensure trimmed and validated name
             email,
             password: hashedPassword,
             role,
@@ -176,13 +232,21 @@ export const register = async (
 
         const user = await User.User.create(newUser);
 
-        // Send verification email
-        await sendEmail(email, 'Email Verification', verificationToken, 'verification');
+        // Send verification email (pass name for personalization)
+        await sendEmail(email, 'Email Verification', verificationToken, 'verification', name.trim());
 
+        // Uniform response for all roles (redirection handled post-verification)
         res.status(201).json({
             status: true,
-            message: 'User registered successfully. Please verify your email.',
-            data: { user: { id: user._id.toString(), name, email, role } }
+            message: 'User registered successfully. Please verify your email to proceed.',
+            data: { 
+                user: { 
+                    id: user._id.toString(), 
+                    name: user.name, 
+                    email: user.email, 
+                    role 
+                }
+            }
         });
     } catch (error: any) {
         console.error('Registration error:', error);
@@ -244,43 +308,68 @@ export const login = async (
 
 // verifyEmail
 
+// Verify email token
 export const verifyEmail = async (
-    req: Request<{ token: string }>,
+    req: Request<{ token: string }>, 
     res: Response<IAuthResponse | IErrorResponse>
 ): Promise<void> => {
     try {
         const { token } = req.params;
 
         if (!token) {
-            res.status(400).json({ status: false, message: "Verification token is required" });
+            res.status(400).json({ status: false, message: 'Verification token is required' });
             return;
         }
 
-        // Find user with this token
-        const user = await User.User.findOne({ verificationToken: token });
+        // Find and update user (include role in select for debugging)
+        const user = await User.User.findOne({ 
+            verificationToken: token, 
+            isVerified: false 
+        }).select('role email name _id');  // Explicit select for key fields
 
         if (!user) {
-            res.status(400).json({ status: false, message: "Invalid or expired verification token" });
+            res.status(400).json({ status: false, message: 'Invalid or expired verification token' });
             return;
         }
 
-        // Mark user as verified
+        // Debug log for role (remove in production)
+        console.log(`Verification for user ${user._id}: raw role = "${user.role}"`);
+
+        // Mark as verified and clear token
         user.isVerified = true;
         user.verificationToken = undefined;
+        user.updatedAt = new Date();
         await user.save();
 
-        res.json({
+        // Role check with enum and case-insensitive fallback
+        const rawRole = user.role.toLowerCase().trim();
+        const isAgentRole = rawRole === 'agent' || rawRole === UserRole.AGENT.toLowerCase();
+        const responseData = {
             status: true,
-            message: "Email verified successfully. You can now log in."
-        });
+            message: isAgentRole 
+                ? 'Email verified successfully. Please complete your agent application.' 
+                : 'Email verified successfully. You can now log in.',
+            data: { 
+                user: { 
+                    id: user._id.toString(), 
+                    name: user.name, 
+                    email: user.email, 
+                    role: user.role  // Echo actual role for verification
+                },
+                requiresAgentApplication: isAgentRole  // Flag for frontend redirection
+            }
+        };
+
+        // Debug log for final decision (remove in production)
+        console.log(`Agent role detected: ${isAgentRole} (message: ${responseData.message})`);
+
+        res.json(responseData);
     } catch (error: any) {
-        console.error("Verification error:", error);
-        res.status(500).json({
-            status: false,
-            message: error.message || "Failed to verify email"
-        });
+        console.error('Email verification error:', error);
+        res.status(500).json({ status: false, message: error.message || 'Verification failed' });
     }
 };
+
 
 
 // Forgot Password

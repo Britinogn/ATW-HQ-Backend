@@ -29,6 +29,9 @@ COPY . .
 # The build script should be defined in package.json
 #RUN npm run build
 
+# Install nodemon globally (optional)
+RUN npm install -g nodemon
+
 # Tell Docker that the container will listen on port 5000
 # This doesn't actually publish the port, just documents it
 EXPOSE 5000

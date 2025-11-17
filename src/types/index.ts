@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongoose'
-import { UserRole , PropertyStatus , PropertyType , CarCondition } from './enums';
+import { UserRole , PropertyStatus , PropertyType , CarCondition ,AgentApplicationStatus } from './enums';
 import { Request } from "express";
 
 // Redis type
@@ -21,6 +21,9 @@ export interface IUser {
     verificationToken?: string | undefined;   // for email verification
     resetPasswordToken?: string | undefined;  // for password reset
     resetPasswordExpires?: Date | undefined;
+
+    hasAppliedAsAgent?: boolean;
+    agentApplicationId?: ObjectId | string;
 
     createdAt?: Date;    // timestamp when user was created
     updatedAt?: Date;    // timestamp when user was last updated
@@ -80,6 +83,31 @@ export interface ICar {
     updatedAt?: Date;
 }
 
+
+// Agent Application Status
+
+
+// Agent Application Interface
+export interface IAgentApplication {
+    _id: ObjectId | string;
+    userId: ObjectId | string;
+    fullName: string;
+    phone: string;
+    businessName?: string;
+    experienceYears: number;
+    licenseNumber?: string;
+    bio: string;
+    documents?: string[]; // URLs of uploaded documents
+    status: AgentApplicationStatus;
+    appliedAt: Date;
+    reviewedAt?: Date;
+    reviewedBy?: ObjectId | string; // Admin who reviewed
+    rejectionReason?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+// Update existing IUser interface - Add these fields
 
 export interface MulterFile {
     path: string;
