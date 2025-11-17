@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { IUser } from '../types';
 import User from '../models/Users'; 
 import AgentApplication from '../models/Agents'; 
-import { sendEmail } from './authController';
+import { sendEmail } from '../utils/emailService';
+
 import { AgentApplicationStatus } from '../types/enums'; 
 
 // Environment variable for admin email
