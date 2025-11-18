@@ -3,6 +3,8 @@ import {Property} from '../models/Property';
 import cloudinary from '../config/cloudinary';
 import { IProperty } from '../types';
 import { PropertyStatus, PropertyType } from '../types/enums';
+import { url } from 'inspector';
+import { MediaItem } from '../types';
 
 // Response interfaces for type safety
 export interface IPropertyResponse {
@@ -54,15 +56,118 @@ export const createProperty = async (
     res: Response<IPropertyResponse | IErrorResponse>
 ): Promise<void> => {
     try {
-        // Implementation here
+        const {
+            title,
+            propertyType,
+            price,
+            offPrice,
+            callOnPrice,
+            location,
+            description,
+            size,
+            bedrooms,
+            bathrooms,
+            amenities,
+            status
+        } = req.body;
+
+        // Basic validation
+        if (!title || !propertyType || !price || !location || !size) {
+            res.status(400).json({
+                status: false,
+                message: 'Title, property type, price, location, and size are required'
+            });
+            return;
+        }
+
+        // Parse location object (assuming JSON string from form)
+        const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
+
+        // Parse amenities array (assuming JSON string from form)
+        const parsedAmenities = amenities ? (typeof amenities === 'string' ? JSON.parse(amenities) : amenities) : [];
+
+        // Parse callOnPrice to boolean
+        const callOnPriceBool = callOnPrice === true ;
+
+        // Handle images and videos from multer uploads
+        const images: MediaItem[] = [];
+        if (req.files && (req.files as any)['images']) {
+            const imageFiles = Array.isArray((req.files as any)['images']) ? (req.files as any)['images'] : [(req.files as any)['images']];
+            for (const file of imageFiles) {
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: 'property_images',
+                    resource_type: 'image'
+                });
+                images.push({
+                    url: result.secure_url,
+                    publicId: result.public_id
+                });
+            }
+        }
+
+        const videos: MediaItem[] = [];
+        if (req.files && (req.files as any)['videos']) {
+            const videoFiles = Array.isArray((req.files as any)['videos']) ? (req.files as any)['videos'] : [(req.files as any)['videos']];
+            for (const file of videoFiles) {
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: 'property_videos',
+                    resource_type: 'video',
+                    format: 'mp4'
+                });
+                videos.push({
+                    url: result.secure_url,
+                    publicId: result.public_id
+                });
+            }
+        }
+
+        // Ensure images are non-empty
+        if (images.length === 0) {
+            res.status(400).json({
+                status: false,
+                message: 'At least one image is required'
+            });
+            return;
+        }
+
+        // Create property document
+        const newProperty: Partial<IProperty> = {
+            title,
+            propertyType,
+            price: parseFloat(String(price)),
+            offPrice: offPrice ? parseFloat(String(offPrice)) : undefined,
+            callOnPrice: callOnPriceBool,
+            location: parsedLocation,
+            description,
+            images,
+            videos,
+            size: parseFloat(String(size)),
+            bedrooms: bedrooms ? parseInt(String(bedrooms)) : undefined,
+            bathrooms: bathrooms ? parseInt(String(bathrooms)) : undefined,
+            amenities: parsedAmenities,
+            status: status as PropertyStatus || PropertyStatus.AVAILABLE,
+            postedBy: (req.user as any)?._id  // From auth middleware
+        };
+
+        const property = await Property.create(newProperty);
+
+        // Populate agent name if needed
+        await property.populate('postedBy', 'name');
+
+        res.status(201).json({
+            status: true,
+            message: 'Property created successfully',
+            data: { property }
+        });
     } catch (error: any) {
         console.error('Create property error:', error);
-        res.status(500).json({ 
-            status: false, 
-            message: error.message || 'Failed to create property' 
+        res.status(500).json({
+            status: false,
+            message: error.message || 'Failed to create property'
         });
     }
 };
+
 
 // Update Property
 export const updateProperty = async (

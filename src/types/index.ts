@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongoose'
-import { UserRole , PropertyStatus , PropertyType , CarCondition ,AgentApplicationStatus } from './enums';
+import { UserRole , PropertyStatus , PropertyType , CarCondition ,AgentApplicationStatus  } from './enums';
 import { Request } from "express";
 
 // Redis type
@@ -30,14 +30,20 @@ export interface IUser {
 }
 
 
+// Full Cloudinary URL for display and Public ID for API operations
+export interface MediaItem {
+    url: string; 
+    publicId: string;  
+}
+
 
 export interface IProperty {
     _id: ObjectId | string; 
     title: string;
     propertyType: PropertyType;
     price: number;
-    offPrice: number;
-    callOnPrice: boolean;
+    offPrice?: number;
+    callOnPrice?: boolean;
     location: {
         city: string;     
         state: string;    
@@ -46,7 +52,8 @@ export interface IProperty {
     };
     //address?: string; 
     description: string;
-    images: string[]; 
+    images: MediaItem[]; 
+    videos?: MediaItem [];
     size: number;  
     bedrooms?: number;
     bathrooms?: number;
@@ -70,7 +77,8 @@ export interface ICar {
     offPrice: number;
     callOnPrice: boolean;
     description: string;
-    images: string[];  
+    images: MediaItem[]; 
+    videos?: MediaItem [];
     location: {
         city: string;
         state: string;

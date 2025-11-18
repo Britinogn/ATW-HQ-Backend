@@ -1,6 +1,24 @@
 import mongoose, { Schema, Model } from 'mongoose';
 import { ICar } from '../types';  // Adjust path as needed
 import { CarCondition, PropertyStatus } from '../types/enums';  // Adjust imports accordingly
+import type { MediaItem } from '../types'; 
+
+// Sub-schema for MediaItem
+const mediaItemSchema = new Schema<MediaItem>({
+    url: {
+        type: String,
+        required: [true, 'URL is required'],
+        validate: {
+            validator: (v: string) => typeof v === 'string' && v.startsWith('https://res.cloudinary.com/'),
+            message: 'URL must be a valid Cloudinary link'
+        }
+    },
+    publicId: {
+        type: String,
+        required: [true, 'Public ID is required'],
+        trim: true
+    }
+});
 
 const CarSchema: Schema<ICar> = new Schema<ICar>({
     make: {
@@ -56,11 +74,18 @@ const CarSchema: Schema<ICar> = new Schema<ICar>({
         maxlength: [1000, 'Description cannot exceed 1000 characters'],
     },
     images: {
-        type: [String],
+        type: [mediaItemSchema],
         required: true,
         validate: {
-            validator: (v: string[]) => Array.isArray(v) && v.length > 0 && v.every(i => typeof i === 'string'),
-            message: 'Images must be a non-empty array of image URLs',
+            validator: (v: MediaItem[]) => Array.isArray(v) && v.length > 0,
+            message: 'Images must be a non-empty array of MediaItem objects',
+        },
+    },
+    videos: {
+        type: [mediaItemSchema],
+        validate: {
+            validator: (v: MediaItem[]) => Array.isArray(v),  // Allow empty array or omission
+            message: 'Videos must be an array of MediaItem objects',
         },
     },
     status: {

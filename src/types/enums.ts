@@ -28,17 +28,6 @@ export enum CarCondition {
 
 // agent verification status
 
-// export enum IAgentDetails{
-//     companyName = 'string',
-//     businessLicense = 'string',  // e.g., Cloudinary URL for uploaded document
-//     address = 'string',
-//     phone = 'string',
-//     experienceYears = 'number',
-//     services = 'string[]',
-//     description = 'string',
-//     IDUrl = 'string'
-// }
-
 export enum AgentApplicationStatus {
     PENDING = 'pending',
     APPROVED = 'approved',
