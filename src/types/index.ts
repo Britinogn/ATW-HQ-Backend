@@ -4,7 +4,7 @@ import { Request } from "express";
 
 // Redis type
 export interface CacheOptions{
-    isOpen: boolean;
+    // isOpen: boolean;
     ttl?: number; // Time to live in seconds
 }
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import {Property} from '../models/Property';
 import cloudinary from '../config/cloudinary';
-import { IProperty } from '../types';
+import { IProperty ,CacheOptions } from '../types';
 import { PropertyStatus, PropertyType } from '../types/enums';
 import { url } from 'inspector';
 import { MediaItem } from '../types';
@@ -19,18 +19,43 @@ export interface IErrorResponse {
     message: string;
 }
 
-// Get All Properties
 export const getAllProperties = async (
-    req: Request,
+    req: Request<{}, IPropertyResponse | IErrorResponse>,
     res: Response<IPropertyResponse | IErrorResponse>
 ): Promise<void> => {
     try {
-        // Implementation here
+        const cacheKey = 'properties:all';
+        const CacheOptions = 300;  // 5 minutes
+
+        // Try cache first
+        const cachedProperties = await cache.get<IProperty[]>(cacheKey);
+        if (cachedProperties) {
+            res.json({
+                status: true,
+                message: 'Properties retrieved successfully',
+                data: { properties: cachedProperties }
+            });
+            return;
+        }
+
+        // Fetch from DB with populate
+        const properties = await Property.find()
+            .populate('agentName', 'name')  // Populate agent name from User
+            .sort({ createdAt: -1 });  // Most recent first
+
+        // Cache the result
+        await cache.set(cacheKey, properties, { ttl: CacheOptions });
+
+        res.json({
+            status: true,
+            message: 'Properties retrieved successfully',
+            data: { properties }
+        });
     } catch (error: any) {
         console.error('Get all properties error:', error);
-        res.status(500).json({ 
-            status: false, 
-            message: error.message || 'Failed to fetch properties' 
+        res.status(500).json({
+            status: false,
+            message: error.message || 'Failed to retrieve properties'
         });
     }
 };
@@ -74,10 +99,10 @@ export const createProperty = async (
         } = req.body;
 
         // Basic validation
-        if (!title || !propertyType || !price || !location || !size) {
+        if (!title || !description || !propertyType || !price || !location || !size) {
             res.status(400).json({
                 status: false,
-                message: 'Title, property type, price, location, and size are required'
+                message: 'Title, description, property type, price, location, and size are required'
             });
             return;
         }
