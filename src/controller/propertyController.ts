@@ -68,7 +68,8 @@ export const createProperty = async (
             bedrooms,
             bathrooms,
             amenities,
-            status
+            status,
+            postedBy
         } = req.body;
 
         // Basic validation
@@ -102,6 +103,7 @@ export const createProperty = async (
                     url: result.secure_url,
                     publicId: result.public_id
                 });
+                
             }
         }
 
@@ -146,7 +148,7 @@ export const createProperty = async (
             bathrooms: bathrooms ? parseInt(String(bathrooms)) : undefined,
             amenities: parsedAmenities,
             status: status as PropertyStatus || PropertyStatus.AVAILABLE,
-            postedBy: (req.user as any)?._id  // From auth middleware
+            postedBy:  (req.user as any)?._id  // From auth middleware
         };
 
         const property = await Property.create(newProperty);
@@ -175,7 +177,107 @@ export const updateProperty = async (
     res: Response<IPropertyResponse | IErrorResponse>
 ): Promise<void> => {
     try {
-        // Implementation here
+        const property = await Property.findById(req.params.id);
+        if (!property) {
+            res.status(404).json({status: false , message: 'Property not found'})
+            return;
+        }
+
+        const {
+            title,
+            propertyType,
+            price,
+            offPrice,
+            callOnPrice,
+            location,
+            description,
+            size,
+            bedrooms,
+            bathrooms,
+            amenities,
+            status,
+            postedBy
+        } = req.body;
+
+         // Parse location object (assuming JSON string from form)
+        const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
+
+        // Parse amenities array (assuming JSON string from form)
+        const parsedAmenities = amenities ? (typeof amenities === 'string' ? JSON.parse(amenities) : amenities) : [];
+
+        // Parse callOnPrice to boolean
+        const callOnPriceBool = callOnPrice === true ;
+        
+        // Update scalar fields with nullish coalescing (keep existing if not provided)
+        property.title = title || property.title;
+        property.propertyType = propertyType || property.propertyType;
+        property.price = price ? parseFloat(String(price)) : property.price;
+        property.offPrice = offPrice ? parseFloat(String(offPrice)) : property.offPrice;
+        property.callOnPrice = callOnPriceBool;
+        property.location = parsedLocation;
+        property.description = description || property.description;
+        property.size = size ? parseFloat(String(size)) : property.size;
+        property.bedrooms = bedrooms ? parseInt(String(bedrooms)) : property.bedrooms;
+        property.bathrooms = bathrooms ? parseInt(String(bathrooms)) : property.bathrooms;
+        property.amenities = parsedAmenities;
+        property.status = status || property.status;
+        property.postedBy = postedBy ?? property.postedBy;
+
+        
+
+        // Handle images and videos from multer uploads
+        const images: MediaItem[] = [];
+        if (req.files && (req.files as any)['images']) {
+            const imageFiles = Array.isArray((req.files as any)['images']) ? (req.files as any)['images'] : [(req.files as any)['images']];
+            for (const file of imageFiles) {
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: 'property_images',
+                    resource_type: 'image'
+                });
+                images.push({
+                    url: result.secure_url,
+                    publicId: result.public_id
+                });
+            }
+        }
+
+        const videos: MediaItem[] = [];
+        if (req.files && (req.files as any)['videos']) {
+            const videoFiles = Array.isArray((req.files as any)['videos']) ? (req.files as any)['videos'] : [(req.files as any)['videos']];
+            for (const file of videoFiles) {
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: 'property_videos',
+                    resource_type: 'video',
+                    format: 'mp4'
+                });
+                videos.push({
+                    url: result.secure_url,
+                    publicId: result.public_id
+                });
+            }
+        }
+
+        // Ensure images are non-empty
+        if (images.length === 0) {
+            res.status(400).json({
+                status: false,
+                message: 'At least one image is required'
+            });
+            return;
+        }
+    
+
+        // Populate agent name if needed
+        await property.populate('postedBy', 'name');
+        
+        await property.save();
+
+        res.status(201).json({
+            status: true,
+            message: 'Property updated successfully',
+            data: { property }
+        });
+
     } catch (error: any) {
         console.error('Update property error:', error);
         res.status(500).json({ 
