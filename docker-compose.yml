@@ -34,24 +34,41 @@ services:
     ports:
       - "5000:5000"
     environment:
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/mydb?authSource=admin
+      MONGO_URI: mongodb://admin:password123@mongodb:27017/mydb?authSource=admin
       PORT: 5000
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASS: ${EMAIL_PASS}
       FRONTEND_URL: ${FRONTEND_URL}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_URL: redis://default:JzopeQGFgYZLZyKRJI2xWceIYctiKWOt@redis-19945.c253.us-central1-1.gce.cloud.redislabs.com:19945  # Hosted URL
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+
       
     depends_on:
       - mongodb
       - redis
     networks:
       - app-network
-    volumes:
-      - .:/app
-      - /app/node_modules
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
     command: npm run dev
     #command: node dist/server.js
+
+    develop:
+      watch:
+        # sync TS source files into the container
+        - action: sync
+          path: ./src             # where your .ts files live
+          target: /app/src        # where code is in the container
+          ignore:
+            - node_modules/
+        # when package.json changes, do a full rebuild
+        - action: rebuild
+          path: package.json
 
 volumes:
   mongodb_data:

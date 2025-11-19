@@ -1,12 +1,18 @@
 import { createClient } from "redis";
 
-// Use environment variables or Docker service name
-const redisHost = process.env.REDIS_HOST || "redis";
-const redisPort = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379;
-const redisUrl = process.env.REDIS_URL || `redis://${redisHost}:${redisPort}`;
+// Retrieve connection parameters from environment variables
+const redisUsername = process.env.REDIS_USERNAME || 'default';
+const redisPassword = process.env.REDIS_PASSWORD || '';
+const redisHost = process.env.REDIS_HOST || 'redis-19945.c253.us-central1-1.gce.cloud.redislabs.com';
+const redisPort = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 19945;
 
 const redisClient = createClient({
-    url: redisUrl
+    username: redisUsername,
+    password: redisPassword,
+    socket: {
+        host: redisHost,
+        port: redisPort
+    }
 });
 
 redisClient.on("error", (err) => {
@@ -14,7 +20,15 @@ redisClient.on("error", (err) => {
 });
 
 redisClient.on("connect", () => {
-    console.log(`✅ Redis connected successfully to ${redisUrl}`);
+    console.log(`✅ Redis connected successfully to ${redisHost}:${redisPort}`);
+});
+
+redisClient.on("ready", () => {
+    console.log("✅ Redis client is ready for operations");
+});
+
+redisClient.on("reconnecting", () => {
+    console.log("🔄 Redis client reconnecting...");
 });
 
 export const connectRedis = async () => {

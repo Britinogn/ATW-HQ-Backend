@@ -5,6 +5,7 @@ import { IProperty } from '../types';
 import { PropertyStatus, PropertyType } from '../types/enums';
 import { url } from 'inspector';
 import { MediaItem } from '../types';
+import { cache } from '../utils/cache';
 
 // Response interfaces for type safety
 export interface IPropertyResponse {
@@ -69,7 +70,7 @@ export const createProperty = async (
             bathrooms,
             amenities,
             status,
-            postedBy
+            agentName
         } = req.body;
 
         // Basic validation
@@ -88,7 +89,7 @@ export const createProperty = async (
         const parsedAmenities = amenities ? (typeof amenities === 'string' ? JSON.parse(amenities) : amenities) : [];
 
         // Parse callOnPrice to boolean
-        const callOnPriceBool = callOnPrice === true ;
+        const callOnPriceBool =  callOnPrice === true;
 
         // Handle images and videos from multer uploads
         const images: MediaItem[] = [];
@@ -103,7 +104,6 @@ export const createProperty = async (
                     url: result.secure_url,
                     publicId: result.public_id
                 });
-                
             }
         }
 
@@ -148,10 +148,14 @@ export const createProperty = async (
             bathrooms: bathrooms ? parseInt(String(bathrooms)) : undefined,
             amenities: parsedAmenities,
             status: status as PropertyStatus || PropertyStatus.AVAILABLE,
-            postedBy:  (req.user as any)?._id  // From auth middleware
+            postedBy: (req.user as any)?._id,  // From auth middleware
+            agentName: agentName || (req.user as any)?.name  // Use from body or user
         };
 
         const property = await Property.create(newProperty);
+
+        // Invalidate relevant caches (e.g., property lists)
+        await cache.del('properties:all');  // Clear global list cache
 
         // Populate agent name if needed
         await property.populate('postedBy', 'name');
