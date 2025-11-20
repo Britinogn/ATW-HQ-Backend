@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import {Property} from '../models/Property';
 import cloudinary from '../config/cloudinary';
-import { IProperty ,CacheOptions } from '../types';
-import { PropertyStatus, PropertyType } from '../types/enums';
+import { IProperty  } from '../types';
+import { PropertyStatus } from '../types/enums';
 import { url } from 'inspector';
 import { MediaItem } from '../types';
 import { cache } from '../utils/cache';
@@ -40,7 +40,7 @@ export const getAllProperties = async (
 
         // Fetch from DB with populate
         const properties = await Property.find()
-            .populate('agentName', 'name')  // Populate agent name from User
+            .populate('postedBy', 'name')  // Populate agent name from User
             .sort({ createdAt: -1 });  // Most recent first
 
         // Cache the result
@@ -66,7 +66,38 @@ export const getPropertyById = async (
     res: Response<IPropertyResponse | IErrorResponse>
 ): Promise<void> => {
     try {
-        // Implementation here
+        const { id } = req.params;
+
+        // Validate ID format (basic check for ObjectId)
+        if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+            res.status(400).json({
+                status: false,
+                message: 'Invalid property ID'
+            });
+            return;
+        }
+
+        // Find property by ID
+        const property = await Property.findById(id);
+            // .populate('postedBy', 'name')  ;
+        
+
+        if (!property) {
+            res.status(404).json({
+                status: false,
+                message: 'Property not found'
+            });
+            return;
+        }
+
+        // Populate agent name from postedBy
+        await property.populate('postedBy', 'name');
+
+        res.status(200).json({
+            status: true,
+            message: 'Property retrieved successfully',
+            data: { property }
+        });
     } catch (error: any) {
         console.error('Get property by ID error:', error);
         res.status(500).json({ 
@@ -95,7 +126,7 @@ export const createProperty = async (
             bathrooms,
             amenities,
             status,
-            agentName
+            agentName,
         } = req.body;
 
         // Basic validation
@@ -174,7 +205,7 @@ export const createProperty = async (
             amenities: parsedAmenities,
             status: status as PropertyStatus || PropertyStatus.AVAILABLE,
             postedBy: (req.user as any)?._id,  // From auth middleware
-            agentName: agentName || (req.user as any)?.name  // Use from body or user
+            agentName: agentName || (req.user as any)?.name 
         };
 
         const property = await Property.create(newProperty);
@@ -322,7 +353,43 @@ export const deleteProperty = async (
     res: Response<IPropertyResponse | IErrorResponse>
 ): Promise<void> => {
     try {
-        // Implementation here
+        const {id} = req.params;
+        const property = await Property.findById(req.params.id);
+        if (!property) {
+            res.status(404).json({
+                status: false,
+                message: 'Property not found'
+            });
+            return;
+        }
+
+        // Ownership validation (poster or admin only)
+        if (property.postedBy.toString() !== (req.user as any)?._id.toString() && req.user?.role !== 'admin') {
+            res.status(403).json({
+                status: false,
+                message: 'Access denied. You can only delete your own properties.'
+            });
+            return;
+        }
+        // Delete images from Cloudinary
+        for (const image of property.images || []) {
+            await cloudinary.uploader.destroy(image.publicId, { resource_type: 'image' });
+        }
+
+        // Delete videos from Cloudinary
+        for (const video of property.videos || []) {
+            await cloudinary.uploader.destroy(video.publicId, { resource_type: 'video' });
+        }
+
+        // Delete the car document
+        await Property.findByIdAndDelete(id);
+
+        res.status(200).json({
+            status: true,
+            message: 'Property deleted successfully'
+        });
+
+
     } catch (error: any) {
         console.error('Delete property error:', error);
         res.status(500).json({ 

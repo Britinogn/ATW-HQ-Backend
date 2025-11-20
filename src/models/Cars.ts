@@ -27,7 +27,7 @@ const CarSchema: Schema<ICar> = new Schema<ICar>({
         trim: true,
         uppercase: true, 
     },
-    model: {
+    carModel: {
         type: String,
         required: [true, 'Model is required'],
         trim: true,
@@ -40,7 +40,7 @@ const CarSchema: Schema<ICar> = new Schema<ICar>({
     },
     mileage: {
         type: Number,
-        required: [true, 'Mileage is required'],
+        required: [false, 'Mileage is required'],
         min: [0, 'Mileage cannot be negative'],
     },
     condition: {

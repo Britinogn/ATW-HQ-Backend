@@ -69,9 +69,9 @@ export interface IProperty {
 export interface ICar {
     id: ObjectId | string;
     make: string;
-    model: string;
+    carModel: string;
     year: number;  
-    mileage: number;  
+    mileage?: number;  
     condition: CarCondition;
     price: number;
     offPrice: number;
