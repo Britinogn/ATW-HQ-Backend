@@ -7,6 +7,10 @@ import { connectRedis } from './config/redisClient';
 import http from 'http';
 import { Server } from 'socket.io';
 
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+
+
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173' || '';
 
 import cors from 'cors'
@@ -39,6 +43,21 @@ app.use('/api/agent', agentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/chat', chatRoutes);
 
+
+// ✅ Setup Swagger AFTER routes
+// setupSwagger(app);
+
+// Swagger Documentation Route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'ATW HQ API Documentation',
+}));
+
+// Optional: Serve swagger spec as JSON
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // Create HTTP server
 const server = http.createServer(app);

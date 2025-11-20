@@ -7,10 +7,10 @@ import { uploadProperty } from '../middleware/uploadMiddleware';
 const router = Router();
 
 // GET /api/properties - Retrieve all properties (authenticated users only)
-router.get('/', authMiddleware, propertyController.getAllProperties);
+router.get('/', propertyController.getAllProperties);
 
 // GET /api/properties/:id - Retrieve a single property (authenticated users only)
-router.get('/:id', authMiddleware, propertyController.getPropertyById);
+router.get('/:id', propertyController.getPropertyById);
 
 // POST /api/properties - Create a new property (admin/agent only)
 router.post('/', 
