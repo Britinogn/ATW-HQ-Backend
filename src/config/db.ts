@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
 
+mongoose.set('strictPopulate', false); // <== Add this before connecting
+
+
 const connectDB = async (): Promise<void> =>{
     // Guard : Ensure URL is Set
     if (!process.env.MONGO_URI) {

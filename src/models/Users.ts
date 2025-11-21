@@ -50,6 +50,8 @@ const UserSchema: Schema<IUser> = new Schema<IUser>({
         select: false,  // Exclude from queries
     },
 
+    
+
 } , { timestamps: true });
 
 // Indexes for performance

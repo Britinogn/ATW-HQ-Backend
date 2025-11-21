@@ -34,6 +34,7 @@ import carRoutes from './routes/carsRoutes'
 import paymentRoutes from './routes/paymentRoutes';
 import agentRoutes from './routes/agentRoutes'
 import chatRoutes from './routes/chatRoutes'
+import dashboardRoutes from './routes/dashboadRoutes'
 
 //use routes
 app.use('/api/auth', authRoutes)
@@ -42,7 +43,7 @@ app.use('/api/cars', carRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/chat', chatRoutes);
-
+app.use('/api/dashboard', dashboardRoutes);
 
 // ✅ Setup Swagger AFTER routes
 // setupSwagger(app);

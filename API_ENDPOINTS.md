@@ -8,9 +8,17 @@
 | `POST` | `/forgot-password` | Request password reset | Public |
 | `POST` | `/reset-password/:token` | Reset password | Public |
 | `GET` | `/verify/:token` | Verify email | Public |
+| `POST` | `/resend-verification` | Resend verification email | Public |
 | `GET` | `/profile` | Get user profile | User, Admin, Agent |
 | `GET` | `/users` | Get all users | Admin |
 | `DELETE` | `/users/:id` | Delete a user | Admin |
+
+## Dashboard Routes (`/api/dashboard`)
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/user` | User dashboard stats | User |
+| `GET` | `/agent` | Agent dashboard stats | Agent |
+| `GET` | `/admin` | Admin dashboard stats | Admin |
 
 ## Property Routes (`/api/properties`)
 | Method | Endpoint | Description | Access |
@@ -62,3 +70,4 @@
 | `GET` | `/api/health` | Health check |
 | `GET` | `/api-docs` | Swagger Documentation |
 | `GET` | `/api-docs.json` | Swagger JSON Spec |
+

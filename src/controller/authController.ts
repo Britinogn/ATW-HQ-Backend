@@ -81,12 +81,12 @@ export const register = async (
         res.status(201).json({
             status: true,
             message: 'User registered successfully. Please verify your email to proceed.',
-            data: { 
-                user: { 
-                    id: user._id.toString(), 
-                    name: user.name, 
-                    email: user.email, 
-                    role 
+            data: {
+                user: {
+                    id: user._id.toString(),
+                    name: user.name,
+                    email: user.email,
+                    role
                 }
             }
         });
@@ -148,11 +148,9 @@ export const login = async (
     }
 };
 
-// verifyEmail
-
 // Verify email token
 export const verifyEmail = async (
-    req: Request<{ token: string }>, 
+    req: Request<{ token: string }>,
     res: Response<IAuthResponse | IErrorResponse>
 ): Promise<void> => {
     try {
@@ -164,9 +162,9 @@ export const verifyEmail = async (
         }
 
         // Find and update user (include role in select for debugging)
-        const user = await User.User.findOne({ 
-            verificationToken: token, 
-            isVerified: false 
+        const user = await User.User.findOne({
+            verificationToken: token,
+            isVerified: false
         }).select('role email name _id');  // Explicit select for key fields
 
         if (!user) {
@@ -188,14 +186,14 @@ export const verifyEmail = async (
         const isAgentRole = rawRole === 'agent' || rawRole === UserRole.AGENT.toLowerCase();
         const responseData = {
             status: true,
-            message: isAgentRole 
-                ? 'Email verified successfully. Please complete your agent application.' 
+            message: isAgentRole
+                ? 'Email verified successfully. Please complete your agent application.'
                 : 'Email verified successfully. You can now log in.',
-            data: { 
-                user: { 
-                    id: user._id.toString(), 
-                    name: user.name, 
-                    email: user.email, 
+            data: {
+                user: {
+                    id: user._id.toString(),
+                    name: user.name,
+                    email: user.email,
                     role: user.role  // Echo actual role for verification
                 },
                 requiresAgentApplication: isAgentRole  // Flag for frontend redirection
@@ -213,6 +211,48 @@ export const verifyEmail = async (
 };
 
 
+// Resend Verification Email
+export const resendVerificationEmail = async (
+    req: Request<{}, IAuthResponse | IErrorResponse, { email: string }>,
+    res: Response<IAuthResponse | IErrorResponse>
+): Promise<void> => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            res.status(400).json({ status: false, message: 'Email is required' });
+            return;
+        }
+
+        // Find user
+        const user = await User.User.findOne({ email });
+        if (!user) {
+            res.status(404).json({ status: false, message: 'User not found' });
+            return;
+        }
+
+        if (user.isVerified) {
+            res.status(400).json({ status: false, message: 'Email is already verified' });
+            return;
+        }
+
+        // Generate new verification token
+        const verificationToken = crypto.randomBytes(20).toString('hex');
+
+        // Update user
+        user.verificationToken = verificationToken;
+        user.updatedAt = new Date();
+        await user.save();
+
+        // Send verification email
+        await sendEmail(email, 'Email Verification', verificationToken, 'verification', user.name);
+
+        res.json({ status: true, message: 'Verification email sent successfully' });
+    } catch (error: any) {
+        console.error('Resend verification error:', error);
+        res.status(500).json({ status: false, message: error.message || 'Failed to resend verification email' });
+    }
+};
 
 // Forgot Password
 export const forgetPassword = async (
@@ -334,7 +374,7 @@ export const profile = async (
 
 
 export const getAllUsers = async (
-    req: Request, 
+    req: Request,
     res: Response
 ): Promise<void> => {
     try {
@@ -391,6 +431,7 @@ export default {
     register,
     login,
     verifyEmail,
+    resendVerificationEmail,
     forgetPassword,
     resetPassword,
     profile,

@@ -1,15 +1,16 @@
 import { ObjectId } from 'mongoose'
-import { UserRole , PropertyStatus , PropertyType , CarCondition ,AgentApplicationStatus  } from './enums';
+import { UserRole, PropertyStatus, PropertyType, CarCondition, AgentApplicationStatus } from './enums';
 import { Request } from "express";
 
 // Redis type
-export interface CacheOptions{
+export interface CacheOptions {
     // isOpen: boolean;
     ttl?: number; // Time to live in seconds
 }
 
 export interface IUser {
-    id?: ObjectId | string;  
+    _id?: ObjectId | string;
+    id?: ObjectId | string;
     name: string;
     email: string;
     password: string;
@@ -24,6 +25,7 @@ export interface IUser {
 
     hasAppliedAsAgent?: boolean;
     agentApplicationId?: ObjectId | string;
+    agent?: string
 
     createdAt?: Date;    // timestamp when user was created
     updatedAt?: Date;    // timestamp when user was last updated
@@ -32,36 +34,36 @@ export interface IUser {
 
 // Full Cloudinary URL for display and Public ID for API operations
 export interface MediaItem {
-    url: string; 
-    publicId: string;  
+    url: string;
+    publicId: string;
 }
 
 
 export interface IProperty {
-    _id: ObjectId | string; 
+    _id: ObjectId | string;
     title: string;
     propertyType: PropertyType;
     price: number;
     offPrice?: number;
     callOnPrice?: boolean;
     location: {
-        city: string;     
-        state: string;    
-        area?: string;    
-        address?: string;  
+        city: string;
+        state: string;
+        area?: string;
+        address?: string;
     };
     //address?: string; 
     description: string;
-    images: MediaItem[]; 
-    videos?: MediaItem [];
-    size: number;  
+    images: MediaItem[];
+    videos?: MediaItem[];
+    size: number;
     bedrooms?: number;
     bathrooms?: number;
-    amenities?: string[];  
+    amenities?: string[];
     status: PropertyStatus;
-    views: number; 
-    postedBy: ObjectId | string; 
-    agentName?: string; 
+    views: number;
+    postedBy: ObjectId | string;
+    agentName?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -70,23 +72,23 @@ export interface ICar {
     id: ObjectId | string;
     make: string;
     carModel: string;
-    year: number;  
-    mileage?: number;  
+    year: number;
+    mileage?: number;
     condition: CarCondition;
     price: number;
     offPrice: number;
     callOnPrice: boolean;
     description: string;
-    images: MediaItem[]; 
-    videos?: MediaItem [];
+    images: MediaItem[];
+    videos?: MediaItem[];
     location: {
         city: string;
         state: string;
-        address?:string
+        address?: string
         showroom?: string;  // Optional: specific showroom/lot name
     };
-    status: PropertyStatus;  
-    postedBy: ObjectId | string; 
+    status: PropertyStatus;
+    postedBy: ObjectId | string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -160,7 +162,7 @@ export interface IPaymentVerifyResponse {
             email: string;
             firstName?: string;
             lastName?: string;
-            
+
         };
     };
 }
@@ -182,7 +184,7 @@ export interface PaystackError {
 
 
 
-export type CacheKey = 
+export type CacheKey =
     | `property:${string}`
     | `car:${string}`
     | `properties:list:${string}`
