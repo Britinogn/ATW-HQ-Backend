@@ -15,6 +15,8 @@ COPY package*.json ./
 # Copy TypeScript configuration file
 # This is needed to compile TypeScript to JavaScript
 COPY tsconfig.json ./
+# RUN npm ci --only=production && npm cache clean --force
+# COPY --from=builder /app/dist ./dist
 
 # Install all dependencies listed in package.json
 # This includes TypeScript, @types packages, and all other dependencies
@@ -34,7 +36,7 @@ RUN npm install -g nodemon
 
 # Tell Docker that the container will listen on port 5000
 # This doesn't actually publish the port, just documents it
-EXPOSE 5000
+EXPOSE $PORT
 
 # The command to run when the container starts
 # This runs the compiled JavaScript from the dist folder
